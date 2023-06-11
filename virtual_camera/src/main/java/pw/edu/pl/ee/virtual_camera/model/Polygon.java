@@ -4,6 +4,8 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import lombok.Data;
 
@@ -97,12 +99,58 @@ public class Polygon implements Comparable<Polygon>{
     return p;
   }
 
+  private ArrayList<Polygon> dividePolygons(ArrayList<Polygon> polygons) {
+    ArrayList<Polygon> divided = new ArrayList<>();
+    for (int i = 0; i < polygons.size(); i++) {
+      Vector3 midpoint = polygons.get(i).findMidpoint();
+      for (int j = 0; j < polygons.get(i).lines.size(); j++) {
+        divided.add(new Polygon(
+            new Line(polygons.get(i).lines.get(j).getA(), polygons.get(i).lines.get(j).getB()),
+            new Line(polygons.get(i).lines.get(j).getA(), midpoint),
+            new Line(polygons.get(i).lines.get(j).getA(), midpoint)
+          )
+        );
+      }
+    }
+    return divided;
+  }
+
+  private boolean areClose(Polygon o) {
+    Vector3 m_other = o.findMidpoint();
+    if (m_other.getX() < findMaxX()
+      && m_other.getX() > findMinX()
+      && m_other.getY() < findMaxY()
+      && m_other.getY() > findMinY()
+    ) return true;
+    return false;
+  }
+
   @Override
   public int compareTo(Polygon o) {
-    Vector3 centroid = findMidpoint();
-    Vector3 oCentroid = o.findMidpoint();
-    float myDistance = centroid.getX() * centroid.getX() + centroid.getY() * centroid.getY() + centroid.getZ()*centroid.getZ();
-    float oDistance = oCentroid.getX() * oCentroid.getX() + oCentroid.getY() * oCentroid.getY() + oCentroid.getZ() * oCentroid.getZ();
-    return (int) (oDistance - myDistance);
+    ArrayList<Polygon> polygons_other = new ArrayList<>();
+    ArrayList<Polygon> polygons_this = new ArrayList<>();
+    float result = o.findMidpoint().sqrMagnitude() - findMidpoint().sqrMagnitude();
+
+    polygons_other.add(o);
+    polygons_this.add(this);
+
+    for (int i = 0; i < 3; i++) {
+      polygons_other = dividePolygons(polygons_other);
+      polygons_this = dividePolygons(polygons_this);
+    }
+
+    for (int i = 0; i < polygons_this.size(); i++) {
+      ArrayList<Float> results = new ArrayList<>();
+      for (int j = 0; j < polygons_other.size(); j++) {
+        if(polygons_this.get(i).areClose(polygons_other.get(j)))
+        {
+          results.add(polygons_other.get(j).findMidpoint().sqrMagnitude() - polygons_this.get(i).findMidpoint().sqrMagnitude());
+        }
+      }
+      if (results.size() > 0)
+        result += Collections.min(results);
+    }
+
+    return (int) (result);
   }
 }

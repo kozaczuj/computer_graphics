@@ -93,4 +93,9 @@ public class Vector3 {
   public int hashCode() {
     return Float.hashCode(x) ^ Float.hashCode(y) << 2 ^ Float.hashCode(z) >> 2;
   }
+
+  @Override
+  public String toString() {
+    return ("[" + getX() + ", " + getY() + ", " + getZ() + "]");
+  }
 }
